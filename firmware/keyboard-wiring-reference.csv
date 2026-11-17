@@ -1,0 +1,25 @@
+fpc_pin,signal,gpio,physical_pin,kind
+2,R0,GP0,1,行 row
+3,R1,GP1,2,行 row
+4,R2,GP2,4,行 row
+5,R3,GP3,5,行 row
+6,R4,GP4,6,行 row
+7,C0,GP16,21,列 column
+8,R5,GP5,7,行 row
+9,C1,GP17,22,列 column
+10,C2,GP18,24,列 column
+11,R6,GP6,9,行 row
+12,C3,GP19,25,列 column
+13,R7,GP7,10,行 row
+14,R8,GP8,11,行 row
+15,R9,GP9,12,行 row
+16,R10,GP10,14,行 row
+17,R11,GP11,15,行 row
+18,R12,GP12,16,行 row
+19,C4,GP20,26,列 column
+20,R13,GP13,17,行 row
+21,R14,GP14,19,行 row
+22,R15,GP15,20,行 row
+23,C5,GP21,27,列 column
+24,C6,GP22,29,列 column
+25,C7,GP28,34,列 column

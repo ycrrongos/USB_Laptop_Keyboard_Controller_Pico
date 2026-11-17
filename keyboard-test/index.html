@@ -1,0 +1,520 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>USB Laptop Keyboard Controller (Pico) · 键盘逐键测试</title>
+<style>
+:root{
+  --bg:#f2f4ef;--ink:#26332f;--muted:#6c8178;--line:#dfe7df;--card:#fff;
+  --dark:#173b35;--green:#4d8b68;--mint:#bde2c9;--red:#b4543f;--amber:#b47a2e;
+  --blue:#4e6e9b;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,"Noto Sans SC",system-ui,sans-serif;background:var(--bg);color:var(--ink)}
+header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 26px;background:var(--dark);color:#fff}
+.brand{display:flex;align-items:center;gap:12px;font-weight:750;font-size:18px}
+.logo{width:34px;height:34px;border:2px solid var(--mint);border-radius:10px;display:grid;place-items:center;color:var(--mint);font-size:18px}
+.sub{font-size:12px;color:#b9d0c8;font-weight:400;margin-top:2px}
+.header-note{font-size:12px;color:#cfe0d6;text-align:right;line-height:1.5}
+main{max-width:1180px;margin:0 auto;padding:22px 18px 60px}
+.screen{display:block}
+.hidden{display:none!important}
+.hero{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:34px;box-shadow:0 14px 40px #173b350d}
+.hero h1{margin:0 0 8px;font-size:30px;letter-spacing:-.03em}
+.hero p{color:var(--muted);line-height:1.7;margin:0 0 20px}
+.btn{border:1px solid #ced9d2;background:#fff;color:#244138;border-radius:10px;padding:11px 16px;font:inherit;font-weight:650;cursor:pointer;white-space:nowrap}
+.btn:hover{background:#eaf5ed}
+.btn.primary{background:var(--mint);border-color:var(--mint);color:var(--dark)}
+.btn.dark{background:#244f42;border-color:#356657;color:#fff}
+.btn.warn{background:#fff4e4;border-color:#e4c08b;color:#8a5a1f}
+.btn.bad{background:#fdece8;border-color:#e0b0a4;color:#8c3d2c}
+.btn.ghost{background:transparent;color:var(--muted)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.actions{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+.warnbox{border-left:3px solid var(--amber);background:#fff7ec;color:#7b4a20;padding:12px 14px;border-radius:9px;font-size:13px;line-height:1.65;margin:16px 0 0}
+.okbox{border-left:3px solid var(--green);background:#f0f8f2;color:#355e46;padding:12px 14px;border-radius:9px;font-size:13px;line-height:1.65}
+.topline{display:flex;align-items:center;gap:14px;margin-bottom:18px}
+.progress{flex:1;height:9px;border-radius:20px;background:#dfe8e1;overflow:hidden}
+.progress>div{height:100%;width:0;background:linear-gradient(90deg,#7bbd95,#3f7f5b);transition:width .18s}
+.counter{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.test-card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:26px;box-shadow:0 14px 40px #173b350d}
+.group{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#6e9181;font-weight:750;margin-bottom:8px}
+.key-label{font-size:clamp(58px,11vw,112px);line-height:1;font-weight:800;letter-spacing:-.06em;color:var(--dark);margin:8px 0 10px;min-height:1em;word-break:break-word}
+.key-hint{color:var(--muted);font-size:14px;line-height:1.6;margin-bottom:16px}
+.status{min-height:30px;font-size:17px;font-weight:650;padding:9px 12px;border-radius:9px;background:#f4f8f4;color:#527064;margin-bottom:16px}
+.status.ok{background:#e9f7ee;color:#2e6a4d}
+.status.bad{background:#fdece8;color:#8c3d2c}
+.status.idle{background:#f4f8f4;color:#527064}
+.hint{font-size:12px;color:#82948b;line-height:1.6;margin:14px 0 0}
+.grid{display:grid;gap:14px;margin-top:24px}
+.grid-group{border:1px solid var(--line);border-radius:12px;padding:10px 12px 12px;background:#fbfcfa}
+.grid-title{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#729086;font-weight:750;margin:2px 0 9px}
+.chips{display:flex;flex-wrap:wrap;gap:5px}
+.chip{border:1px solid #d8e2da;background:#fff;color:#3d574c;border-radius:7px;padding:5px 8px;font:inherit;font-size:12px;cursor:pointer;line-height:1.1;min-width:28px}
+.chip:hover{background:#eef7f1}
+.chip.current{background:var(--dark);border-color:var(--dark);color:#fff;box-shadow:0 0 0 2px #bde2c955}
+.chip.pass{background:#e2f4e8;border-color:#a9d6b8;color:#2e6a4d}
+.chip.wrong{background:#fde9e4;border-color:#e1b1a5;color:#8c3d2c}
+.chip.no-response{background:#fff2df;border-color:#e6c58f;color:#8a5a1f}
+.chip.skipped{background:#eef0ee;border-color:#d6dcd6;color:#7c8880}
+.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin:18px 0}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+.stat .n{font-size:28px;font-weight:800;letter-spacing:-.04em}
+.stat .l{font-size:12px;color:var(--muted);margin-top:2px}
+.result-table{max-height:420px;overflow:auto;border:1px solid var(--line);border-radius:12px;background:#fff}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{padding:7px 10px;border-bottom:1px solid #edf1ed;text-align:left}
+th{background:#f7faf7;color:#6c8178;font-weight:700;position:sticky;top:0}
+td.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px}
+.pass-text{color:#2e6a4d;font-weight:650}
+.wrong-text{color:#8c3d2c;font-weight:650}
+.no-text{color:#8a5a1f;font-weight:650}
+.skip-text{color:#7c8880}
+.focus-banner{position:fixed;inset:auto 16px 16px 16px;z-index:50;background:#173b35;color:#fff;border-radius:12px;padding:13px 16px;font-weight:650;text-align:center;cursor:pointer;box-shadow:0 12px 34px #0003}
+.focus-banner small{display:block;font-weight:400;color:#cfe0d6;margin-top:2px}
+.small{font-size:12px;color:var(--muted)}
+kbd{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:#eef3ee;border:1px solid #d9e2da;border-radius:5px;padding:1px 5px;font-size:.9em}
+@media(max-width:700px){header{padding:14px;align-items:flex-start;flex-direction:column}.header-note{text-align:left}.hero,.test-card{padding:18px}.key-label{font-size:64px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><div class="logo">⌨</div><div>USB KEYBOARD <span style="font-weight:400;opacity:.75">/ PICO</span><div class="sub">Sony VAIO VPC-EA · USB HID · 86 键</div></div></div>
+  <div class="header-note">请用 VAIO 键盘测试<br>页面保持焦点，不要用笔记本自带键盘</div>
+</header>
+
+<main>
+  <section id="startScreen" class="screen">
+    <div class="hero">
+      <h1>把整块键盘走一遍</h1>
+      <p>页面会一次显示一个键。按对了自动下一个；按错了会显示浏览器实际收到的键；完全没反应就点“没反应 / 跳过”。测试结果会自动保存在浏览器，最后可以导出 JSON。</p>
+      <div class="okbox"><strong>开始前：</strong>把 Pico 插在电脑上，用 VAIO 键盘测试。点击“开始测试”后不要点走，页面失去焦点会暂停。</div>
+      <div class="warnbox"><strong>会被系统截获的键：</strong>Fn 单独按不会有 HID 输出（这是正常的）；PrtSc、Win/GUI、Alt 可能被桌面或浏览器占用，没反应就点“没反应 / 跳过”。</div>
+      <div class="actions" style="margin-top:20px">
+        <button class="btn primary" id="startBtn">开始测试</button>
+        <button class="btn hidden" id="resumeBtn">继续上次测试</button>
+        <button class="btn ghost" id="clearBtn">清空记录</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="testScreen" class="screen hidden">
+    <div class="topline">
+      <div class="progress"><div id="bar"></div></div>
+      <div class="counter" id="counter">1 / 86</div>
+    </div>
+    <div class="test-card">
+      <div class="group" id="group"></div>
+      <div class="key-label" id="keyLabel">Q</div>
+      <div class="key-hint" id="keyHint">请按这个键</div>
+      <div class="status idle" id="status">等待按键…</div>
+      <div class="actions">
+        <button class="btn warn" id="noResp">没反应 / 跳过</button>
+        <button class="btn bad hidden" id="recordWrong">记录错误并下一个</button>
+        <button class="btn hidden" id="retry">重试</button>
+        <button class="btn ghost" id="prev">上一个</button>
+        <button class="btn ghost" id="pause">暂停</button>
+      </div>
+      <p class="hint">按对了会自动下一个。按错会显示实际收到的键；确认是错的就点“记录错误并下一个”，想再试一次就点“重试”。</p>
+    </div>
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <section id="doneScreen" class="screen hidden">
+    <div class="hero">
+      <h1>测试完成</h1>
+      <p class="small" id="doneSub"></p>
+      <div class="summary" id="summary"></div>
+      <div class="actions">
+        <button class="btn primary" id="downloadJson">下载 JSON</button>
+        <button class="btn" id="downloadCsv">下载 CSV</button>
+        <button class="btn ghost" id="restart">重新开始</button>
+      </div>
+    </div>
+    <div class="result-table" id="resultTable"></div>
+  </section>
+</main>
+
+<div id="focusBanner" class="focus-banner hidden">页面失去焦点，点击这里继续<small>测试已暂停，避免按键跑到别的窗口</small></div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+const GROUPS = [
+  { name: '功能与导航', keys: [
+    { id:'Esc', label:'Esc', code:'Escape' },
+    { id:'F1', label:'F1', code:'F1' }, { id:'F2', label:'F2', code:'F2' },
+    { id:'F3', label:'F3', code:'F3' }, { id:'F4', label:'F4', code:'F4' },
+    { id:'F5', label:'F5', code:'F5' }, { id:'F6', label:'F6', code:'F6' },
+    { id:'F7', label:'F7', code:'F7' }, { id:'F8', label:'F8', code:'F8' },
+    { id:'F9', label:'F9', code:'F9' }, { id:'F10', label:'F10', code:'F10' },
+    { id:'F11', label:'F11', code:'F11' }, { id:'F12', label:'F12', code:'F12' },
+    { id:'PSCREEN', label:'PrtSc', code:'PrintScreen' },
+    { id:'Insert', label:'Insert', code:'Insert' },
+    { id:'Delete', label:'Delete', code:'Delete' },
+    { id:'Home', label:'Home', code:'Home' },
+    { id:'End', label:'End', code:'End' },
+    { id:'PgUp', label:'PgUp', code:'PageUp' },
+    { id:'PgDn', label:'PgDn', code:'PageDown' },
+    { id:'NumLock', label:'Num Lock', code:'NumLock' }
+  ]},
+  { name: '数字行', keys: [
+    { id:'Grave', label:'` ~', code:'Backquote' },
+    { id:'1', label:'1 !', code:'Digit1' }, { id:'2', label:'2 @', code:'Digit2' },
+    { id:'3', label:'3 #', code:'Digit3' }, { id:'4', label:'4 $', code:'Digit4' },
+    { id:'5', label:'5 %', code:'Digit5' }, { id:'6', label:'6 ^', code:'Digit6' },
+    { id:'7', label:'7 &', code:'Digit7' }, { id:'8', label:'8 *', code:'Digit8' },
+    { id:'9', label:'9 (', code:'Digit9' }, { id:'0', label:'0 )', code:'Digit0' },
+    { id:'Minus', label:'- _', code:'Minus' },
+    { id:'Equal', label:'= +', code:'Equal' },
+    { id:'Backspace', label:'Backspace', code:'Backspace' }
+  ]},
+  { name: 'Q 行', keys: [
+    { id:'Tab', label:'Tab', code:'Tab' },
+    { id:'Q', label:'Q', code:'KeyQ' }, { id:'W', label:'W', code:'KeyW' },
+    { id:'E', label:'E', code:'KeyE' }, { id:'R', label:'R', code:'KeyR' },
+    { id:'T', label:'T', code:'KeyT' }, { id:'Y', label:'Y', code:'KeyY' },
+    { id:'U', label:'U', code:'KeyU' }, { id:'I', label:'I', code:'KeyI' },
+    { id:'O', label:'O', code:'KeyO' }, { id:'P', label:'P', code:'KeyP' },
+    { id:'LBr', label:'[ {', code:'BracketLeft' },
+    { id:'RBr', label:'] }', code:'BracketRight' },
+    { id:'Backslash', label:'\\ |', code:'Backslash' }
+  ]},
+  { name: 'A 行', keys: [
+    { id:'CapsLock', label:'Caps Lock', code:'CapsLock' },
+    { id:'A', label:'A', code:'KeyA' }, { id:'S', label:'S', code:'KeyS' },
+    { id:'D', label:'D', code:'KeyD' }, { id:'F', label:'F', code:'KeyF' },
+    { id:'G', label:'G', code:'KeyG' }, { id:'H', label:'H', code:'KeyH' },
+    { id:'J', label:'J', code:'KeyJ' }, { id:'K', label:'K', code:'KeyK' },
+    { id:'L', label:'L', code:'KeyL' },
+    { id:'Semicolon', label:'; :', code:'Semicolon' },
+    { id:'Quote', label:"' \"", code:'Quote' },
+    { id:'Enter', label:'Enter', code:'Enter' }
+  ]},
+  { name: 'Z 行', keys: [
+    { id:'LShift', label:'左 Shift', code:'ShiftLeft' },
+    { id:'Z', label:'Z', code:'KeyZ' }, { id:'X', label:'X', code:'KeyX' },
+    { id:'C', label:'C', code:'KeyC' }, { id:'V', label:'V', code:'KeyV' },
+    { id:'B', label:'B', code:'KeyB' }, { id:'N', label:'N', code:'KeyN' },
+    { id:'M', label:'M', code:'KeyM' },
+    { id:'Comma', label:', <', code:'Comma' },
+    { id:'Period', label:'. >', code:'Period' },
+    { id:'Slash', label:'/ ?', code:'Slash' },
+    { id:'RShift', label:'右 Shift', code:'ShiftRight' }
+  ]},
+  { name: '底行', keys: [
+    { id:'LCtrl', label:'左 Ctrl', code:'ControlLeft' },
+    { id:'Fn', label:'Fn', code:null, special:true },
+    { id:'GUI', label:'Win / GUI', code:'MetaLeft' },
+    { id:'LAlt', label:'左 Alt', code:'AltLeft' },
+    { id:'Space', label:'Space', code:'Space' },
+    { id:'RAlt', label:'右 Alt', code:'AltRight' },
+    { id:'Menu', label:'Menu', code:'ContextMenu' },
+    { id:'RCtrl', label:'右 Ctrl', code:'ControlRight' },
+    { id:'Left', label:'←', code:'ArrowLeft' },
+    { id:'Down', label:'↓', code:'ArrowDown' },
+    { id:'Up', label:'↑', code:'ArrowUp' },
+    { id:'Right', label:'→', code:'ArrowRight' }
+  ]}
+];
+
+const KEYS = [];
+GROUPS.forEach((g, gi) => {
+  g.keys.forEach(k => {
+    KEYS.push({ ...k, group: g.name, groupIndex: gi, index: KEYS.length });
+  });
+});
+window.__KEYS = KEYS;
+window.__TEST = { get current(){ return current; }, get results(){ return results; }, get keys(){ return KEYS; } };
+
+const STORAGE = 'aurora-key-test-v1';
+let current = 0;
+let results = new Array(KEYS.length).fill(null);
+let active = false;
+let paused = false;
+let pendingWrong = null;
+let advancing = false;
+let wrongTimer = null;
+
+function save() {
+  try {
+    localStorage.setItem(STORAGE, JSON.stringify({ current, results, updatedAt: Date.now() }));
+  } catch (_) {}
+}
+function load() {
+  try {
+    const raw = localStorage.getItem(STORAGE);
+    if (!raw) return false;
+    const s = JSON.parse(raw);
+    if (!s || !Array.isArray(s.results) || s.results.length !== KEYS.length) return false;
+    results = s.results;
+    current = Math.min(Math.max(0, s.current || 0), KEYS.length - 1);
+    return results.some(Boolean);
+  } catch (_) { return false; }
+}
+function reset() {
+  current = 0;
+  results = new Array(KEYS.length).fill(null);
+  pendingWrong = null;
+  advancing = false;
+  try { localStorage.removeItem(STORAGE); } catch (_) {}
+}
+function completed() {
+  return results.filter(Boolean).length;
+}
+function clearPending() {
+  pendingWrong = null;
+  if (wrongTimer) { clearTimeout(wrongTimer); wrongTimer = null; }
+  $('recordWrong').classList.add('hidden');
+  $('retry').classList.add('hidden');
+}
+function setStatus(text, cls) {
+  const el = $('status');
+  el.textContent = text;
+  el.className = 'status ' + (cls || 'idle');
+}
+function keyNameForEvent(e) {
+  if (e.code && e.code !== 'Unidentified') return e.code;
+  return e.key || '未知键';
+}
+function record(result, receivedCode, receivedKey) {
+  results[current] = {
+    result,
+    receivedCode: receivedCode || null,
+    receivedKey: receivedKey || null,
+    at: Date.now()
+  };
+  save();
+  clearPending();
+  advance();
+}
+function advance() {
+  if (advancing) return;
+  advancing = true;
+  setTimeout(() => {
+    advancing = false;
+    if (current < KEYS.length - 1) {
+      current++;
+      pendingWrong = null;
+      render();
+    } else {
+      showDone();
+    }
+  }, 260);
+}
+function render() {
+  const key = KEYS[current];
+  $('group').textContent = key.group;
+  $('keyLabel').textContent = key.label;
+  $('keyHint').textContent = key.special
+    ? 'Fn 是 KMK 的层键，单独按通常不会产生 HID 事件；按了没反应是正常的，点“跳过 Fn”。'
+    : '请按 VAIO 键盘上的这个键';
+  $('counter').textContent = `${current + 1} / ${KEYS.length}`;
+  $('bar').style.width = `${Math.round((completed() / KEYS.length) * 100)}%`;
+  $('noResp').textContent = key.special ? '跳过 Fn（预期无 HID）' : '没反应 / 跳过';
+  const res = results[current];
+  if (res) {
+    if (res.result === 'pass') setStatus(`已完成：正确（${res.receivedCode || key.code || ''}）`, 'ok');
+    else if (res.result === 'wrong') setStatus(`已完成：收到 ${res.receivedCode || '未知键'}，不是 ${key.label}`, 'bad');
+    else if (res.result === 'no-response') setStatus('已完成：没反应 / 跳过', 'idle');
+    else setStatus('已完成：跳过（预期无 HID）', 'idle');
+  } else if (pendingWrong) {
+    setStatus(`收到 ${pendingWrong.code}（${pendingWrong.key}），不是 ${key.label}`, 'bad');
+  } else {
+    setStatus('等待按键…', 'idle');
+  }
+  $('recordWrong').classList.toggle('hidden', !pendingWrong);
+  $('retry').classList.toggle('hidden', !pendingWrong);
+  renderGrid();
+}
+function renderGrid() {
+  const grid = $('grid');
+  grid.innerHTML = '';
+  GROUPS.forEach(g => {
+    const sec = document.createElement('div');
+    sec.className = 'grid-group';
+    const title = document.createElement('div');
+    title.className = 'grid-title';
+    title.textContent = g.name;
+    const chips = document.createElement('div');
+    chips.className = 'chips';
+    g.keys.forEach(k => {
+      const idx = KEYS.findIndex(x => x.id === k.id && x.groupIndex === g.groupIndex);
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.tabIndex = -1;
+      chip.className = 'chip';
+      chip.textContent = k.label;
+      const res = results[idx];
+      if (res) chip.classList.add(res.result);
+      if (idx === current) chip.classList.add('current');
+      chip.onclick = () => {
+        current = idx;
+        clearPending();
+        render();
+        chip.blur();
+      };
+      chips.appendChild(chip);
+    });
+    sec.appendChild(title);
+    sec.appendChild(chips);
+    grid.appendChild(sec);
+  });
+}
+function showDone() {
+  active = false;
+  $('testScreen').classList.add('hidden');
+  $('doneScreen').classList.remove('hidden');
+  const counts = { pass:0, wrong:0, 'no-response':0, skipped:0, pending:0 };
+  results.forEach(r => {
+    if (!r) counts.pending++;
+    else counts[r.result] = (counts[r.result] || 0) + 1;
+  });
+  const total = KEYS.length;
+  const passRate = Math.round((counts.pass / total) * 100);
+  $('doneSub').textContent = `共 ${total} 键，正确 ${counts.pass} 键（${passRate}%）。结果已保存在当前浏览器，可导出给维护者修 keymap。`;
+  $('summary').innerHTML = [
+    ['正确', counts.pass, 'pass-text'],
+    ['错误', counts.wrong, 'wrong-text'],
+    ['没反应', counts['no-response'], 'no-text'],
+    ['跳过', counts.skipped, 'skip-text'],
+    ['未测', counts.pending, 'small']
+  ].map(([l,n,c]) => `<div class="stat"><div class="n ${c}">${n}</div><div class="l">${l}</div></div>`).join('');
+  renderTable();
+}
+function renderTable() {
+  const rows = KEYS.map((k, i) => {
+    const r = results[i];
+    const result = r ? r.result : 'pending';
+    const label = result === 'pass' ? '正确' : result === 'wrong' ? '错误' : result === 'no-response' ? '没反应' : result === 'skipped' ? '跳过' : '未测';
+    const cls = result === 'pass' ? 'pass-text' : result === 'wrong' ? 'wrong-text' : result === 'no-response' ? 'no-text' : 'skip-text';
+    const got = r && r.receivedCode ? `${r.receivedCode}${r.receivedKey ? ' / ' + r.receivedKey : ''}` : '';
+    return `<tr><td class="mono">${i + 1}</td><td>${k.label}</td><td>${k.group}</td><td class="mono">${k.code || '—'}</td><td class="${cls}">${label}</td><td class="mono">${got}</td></tr>`;
+  }).join('');
+  $('resultTable').innerHTML = `<table><thead><tr><th>#</th><th>键</th><th>分组</th><th>预期 code</th><th>结果</th><th>实际收到</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+function exportRows() {
+  return KEYS.map((k, i) => {
+    const r = results[i];
+    return {
+      index: i + 1,
+      id: k.id,
+      label: k.label,
+      group: k.group,
+      expectedCode: k.code,
+      result: r ? r.result : 'pending',
+      receivedCode: r ? r.receivedCode : null,
+      receivedKey: r ? r.receivedKey : null
+    };
+  });
+}
+function download(name, content, type) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = name; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1500);
+}
+function startTest() {
+  active = true;
+  paused = false;
+  $('startScreen').classList.add('hidden');
+  $('doneScreen').classList.add('hidden');
+  $('testScreen').classList.remove('hidden');
+  $('focusBanner').classList.add('hidden');
+  render();
+  setTimeout(() => { try { window.focus(); } catch (_) {} }, 0);
+}
+function pauseTest() {
+  paused = true;
+  $('focusBanner').classList.remove('hidden');
+}
+function resumeTest() {
+  paused = false;
+  $('focusBanner').classList.add('hidden');
+  try { window.focus(); } catch (_) {}
+}
+
+$('startBtn').onclick = () => { startTest(); $('startBtn').blur(); };
+$('resumeBtn').onclick = () => { startTest(); $('resumeBtn').blur(); };
+$('clearBtn').onclick = () => { reset(); updateResumeButton(); render(); $('clearBtn').blur(); };
+$('noResp').onclick = () => {
+  const key = KEYS[current];
+  record(key.special ? 'skipped' : 'no-response');
+  $('noResp').blur();
+};
+$('recordWrong').onclick = () => {
+  if (!pendingWrong) return;
+  record('wrong', pendingWrong.code, pendingWrong.key);
+  $('recordWrong').blur();
+};
+$('retry').onclick = () => { clearPending(); setStatus('等待按键…', 'idle'); $('retry').blur(); };
+$('prev').onclick = () => {
+  if (current > 0) { current--; clearPending(); render(); }
+  $('prev').blur();
+};
+$('pause').onclick = () => { pauseTest(); $('pause').blur(); };
+$('restart').onclick = () => { reset(); active = false; $('doneScreen').classList.add('hidden'); $('startScreen').classList.remove('hidden'); updateResumeButton(); $('restart').blur(); };
+$('downloadJson').onclick = () => {
+  download('aurora-key-test.json', JSON.stringify({ generatedAt: new Date().toISOString(), total: KEYS.length, rows: exportRows() }, null, 2), 'application/json');
+  $('downloadJson').blur();
+};
+$('downloadCsv').onclick = () => {
+  const head = 'index,id,label,group,expectedCode,result,receivedCode,receivedKey';
+  const lines = exportRows().map(r => [r.index, r.id, r.label, r.group, r.expectedCode || '', r.result, r.receivedCode || '', r.receivedKey || ''].map(v => `"${String(v).replace(/"/g, '""')}"`).join(','));
+  download('aurora-key-test.csv', head + '\n' + lines.join('\n'), 'text/csv');
+  $('downloadCsv').blur();
+};
+$('focusBanner').onclick = resumeTest;
+window.addEventListener('blur', () => { if (active) pauseTest(); });
+window.addEventListener('focus', () => { if (active && paused) resumeTest(); });
+
+window.addEventListener('keydown', e => {
+  if (!active || paused || advancing) return;
+  e.preventDefault();
+  e.stopPropagation();
+  if (e.repeat) return;
+  const key = KEYS[current];
+  if (!key) return;
+  if (key.special) {
+    pendingWrong = { code: keyNameForEvent(e), key: e.key || '' };
+    setStatus(`收到 ${pendingWrong.code}（${pendingWrong.key}），但当前要测的是 Fn；Fn 单独按通常没有 HID，点“跳过 Fn”即可。`, 'bad');
+    $('recordWrong').classList.remove('hidden');
+    $('retry').classList.remove('hidden');
+    return;
+  }
+  const code = keyNameForEvent(e);
+  if (code === key.code) {
+    results[current] = { result: 'pass', receivedCode: code, receivedKey: e.key || '', at: Date.now() };
+    save();
+    clearPending();
+    setStatus(`✅ 正确：${key.label}`, 'ok');
+    advance();
+    return;
+  }
+  pendingWrong = { code, key: e.key || '' };
+  setStatus(`❌ 收到 ${code}（${e.key || '未知'}），不是 ${key.label}`, 'bad');
+  $('recordWrong').classList.remove('hidden');
+  $('retry').classList.remove('hidden');
+  save();
+}, true);
+
+window.addEventListener('keyup', e => {
+  if (active && !paused) { e.preventDefault(); e.stopPropagation(); }
+}, true);
+
+function updateResumeButton() {
+  const has = results.some(Boolean);
+  $('resumeBtn').classList.toggle('hidden', !has);
+}
+const had = load();
+updateResumeButton();
+if (had && results.every(Boolean)) {
+  active = false;
+  $('startScreen').classList.add('hidden');
+  showDone();
+}
+</script>
+</body>
+</html>

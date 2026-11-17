@@ -1,0 +1,13 @@
+# 本地打包产物
+*.tar.gz
+
+# Python
+__pycache__/
+*.pyc
+
+# macOS
+.DS_Store
+
+# 站点部署元数据（不用 OpenAI Sites 时可以删）
+keyboard-measure/.openai/
+keyboard-measure/dist/.openai/
