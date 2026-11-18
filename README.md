@@ -1,10 +1,10 @@
 # USB Laptop Keyboard Controller (Pico)
 
-> Frank Adams 的 [USB_Laptop_Keyboard_Controller](https://github.com/thedalles77/USB_Laptop_Keyboard_Controller) 的 **Raspberry Pi Pico / CircuitPython** 版本：Sony VAIO VPC-EA 键盘矩阵逆向、反向 FPC 转接板接线、KMK 固件、86 键逐键测试页和毫米级布局测量页。它也是 Aurora 手机笔记本项目里的键盘控制器部分。
+> Frank Adams 的 [USB_Laptop_Keyboard_Controller](https://github.com/thedalles77/USB_Laptop_Keyboard_Controller) 的 **Raspberry Pi Pico / CircuitPython** 版本：Sony VAIO VPC-EA 键盘矩阵逆向、反向 FPC 转接板接线、KMK 固件、86 键逐键测试页和毫米级布局测量页。这个仓库只覆盖键盘控制器本身。
 
 ## English summary
 
-A Raspberry Pi Pico port of Frank Adams' USB_Laptop_Keyboard_Controller for the Sony VAIO VPC-EA keyboard. It covers the matrix reverse-engineering, a reversed FPC adapter, CircuitPython + KMK firmware, a browser-based 86-key tester, and a millimetre-accurate keyboard layout tool. It is also the keyboard-controller part of the Aurora phone-centric laptop project. The controller is complete and verified; the rest of the laptop is work in progress.
+A Raspberry Pi Pico port of Frank Adams' USB_Laptop_Keyboard_Controller for the Sony VAIO VPC-EA keyboard. It covers the matrix reverse-engineering, a reversed FPC adapter, CircuitPython + KMK firmware, a browser-based 86-key tester, and a millimetre-accurate keyboard layout tool. This repo is scoped to the keyboard controller only.
 
 ## 与上游项目的关系
 
@@ -24,25 +24,21 @@ A Raspberry Pi Pico port of Frank Adams' USB_Laptop_Keyboard_Controller for the 
 | Pico HID 固件 | ✅ CircuitPython 10.3.2 + KMK |
 | 逐键测试页 | ✅ 浏览器直接读 HID，导出 JSON/CSV |
 | 键盘布局测绘台 | ✅ 毫米布局、JSON/SVG 导出、接线页 |
-| 屏幕 / 扩展坞 | 🟡 方案已定，整机集成中 |
-| 电源 / 外壳 / 转轴 | ⏳ 待定 |
 
-## 系统结构
+## 数据流
 
 ```text
-Nubia Z60 Ultra（手机，项目核心）
-        │ USB-C（DP Alt Mode + USB + PD）
+Sony VAIO VPC-EA 键盘（32P FPC）
+        │ FPC 2–25
         ▼
-   USB-C 扩展坞 ── HDMI ──► 14" 幻14 面板 + 驱动板
-        │ USB-A
+32P FPC 转 2.54mm 转接板（本机丝印反序）
+        │ 24 根信号线
         ▼
-  Raspberry Pi Pico（USB HID 键盘）
-        ▲
-        │ 32P FPC
-  Sony VAIO VPC-EA 白色键盘
+Raspberry Pi Pico（CircuitPython + KMK）
+        │ USB HID
+        ▼
+USB 主机（电脑 / 手机）
 ```
-
-第一版按整链 **60Hz** 设计；高刷屏、电源和外壳还在推进。本仓库只覆盖已经验证通过的键盘部分。
 
 ## 界面
 
@@ -294,9 +290,9 @@ git commit -m "USB Laptop Keyboard Controller (Pico): VPC-EA + Pico HID"
 ## 下一步
 
 - Fn 亮度/无线开关等组合（需要看键帽图标，当前只实现了原版 media 矩阵里的五个）。
-- 手机触摸板模式：把手机触控转成外屏鼠标的相对移动、点击、拖拽和双指滚动。
-- 整机：屏幕/驱动板/扩展坞/电源/外壳/转轴/散热的结构集成。
 - 如果换用同向转接板，按 `docs/keyboard-wiring-reference.md` 接线，并把固件行/列 GPIO 改回同向表。
+- 其他 VPC-EA 变体 / 其他笔记本键盘的矩阵适配。
+- 可选：QMK 端口，或把 Pico 换成其他 RP2040 板。
 
 ## 参考与致谢
 
